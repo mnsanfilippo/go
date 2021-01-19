@@ -53,12 +53,22 @@ func TestTerragruntPlan(t *testing.T){
 	}
 }
 
-func TestTerragruntApply(t *testing.T){
+//func TestTerragruntApply(t *testing.T){
+//
+//	workingDirectory := terraformLiveDir +  "/master/us-east-1/" + environment + "/accounts/"
+//	err := TerragruntApply(workingDirectory)
+//	if err != nil {
+//		log.Fatal(err)
+//		t.Fail()
+//	}
+//}
 
-	workingDirectory := terraformLiveDir +  "/master/us-east-1/" + environment + "/accounts/"
-	err := TerragruntApply(workingDirectory)
+
+func TestCreateAccount(t *testing.T){
+	err := CreateAccount(accountName,environment)
 	if err != nil {
 		log.Fatal(err)
 		t.Fail()
 	}
 }
+

@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	copy "github.com/otiai10/copy"
+	"github.com/otiai10/copy"
 	"os/exec"
 	"strings"
 )
@@ -116,4 +116,42 @@ func TerragruntApply(workingDirectory string) error {
 	err = cmd.Wait()
 	log.Println("out:", outb.String(), "err:", errb.String())
 	return err
+}
+
+
+func CreateAccount(name string, environment string) error {
+	terraformLiveDir := GitClone("https://github.com/mnsanfilippo/terraform-live.git", "main")
+
+	err := CopyEnvironment(terraformLiveDir,environment)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	filename := terraformLiveDir +  "/master/us-east-1/" + environment + "/accounts/terragrunt.hcl"
+	replaceInput := []ReplaceInput{
+		{
+			old: "account_name",
+			new: "  account_name = " + "\"" +  name + "-" + environment + "\"",
+		},
+		{
+			old: "account_email",
+			new: "  account_email = " + "\"mnsanfilippo+" +  name + "+" +  environment + "@gmail.com\"",
+		},
+	}
+
+	err = ReplaceInputs(filename,replaceInput)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	workingDirectory := terraformLiveDir +  "/master/us-east-1/" + environment + "/accounts/"
+	err = TerragruntPlan(workingDirectory)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	return nil
 }
