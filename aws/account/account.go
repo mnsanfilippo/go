@@ -6,10 +6,10 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	"github.com/otiai10/copy"
 	"os/exec"
 	"strings"
 )
@@ -18,8 +18,6 @@ type ReplaceInput struct {
 	old string
 	new string
 }
-
-
 
 func GitClone(url string, branch string) string {
 
@@ -50,8 +48,8 @@ func GitClone(url string, branch string) string {
 	return dir
 }
 
-func CopyEnvironment(dir, environment string) (error){
-	err := copy.Copy(dir + "/master/us-east-1/dev", dir +  "/master/us-east-1/" + environment)
+func CopyEnvironment(dir, environment string) error {
+	err := copy.Copy(dir+"/master/us-east-1/dev", dir+"/master/us-east-1/"+environment)
 	if err != nil {
 		log.Error(err)
 	}
@@ -69,8 +67,8 @@ func ReplaceInputs(filename string, replaceInput []ReplaceInput) error {
 	lines := strings.Split(string(input), "\n")
 
 	for i, line := range lines {
-		for _,v := range replaceInput{
-			if strings.Contains(line,v.old){
+		for _, v := range replaceInput {
+			if strings.Contains(line, v.old) {
 				lines[i] = v.new
 			}
 		}
@@ -86,7 +84,7 @@ func ReplaceInputs(filename string, replaceInput []ReplaceInput) error {
 
 func TerragruntPlan(workingDirectory string) error {
 
-	cmd := exec.Command(  "terragrunt", "plan-all", "terragrunt-source-update", "terragrunt-include-external-dependencies")
+	cmd := exec.Command("terragrunt", "plan-all", "terragrunt-source-update", "terragrunt-include-external-dependencies")
 	var outb, errb bytes.Buffer
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb
@@ -103,7 +101,7 @@ func TerragruntPlan(workingDirectory string) error {
 
 func TerragruntApply(workingDirectory string) error {
 
-	cmd := exec.Command(  "terragrunt", "plan-all", "terragrunt-source-update", "terragrunt-include-external-dependencies")
+	cmd := exec.Command("terragrunt", "plan-all", "terragrunt-source-update", "terragrunt-include-external-dependencies")
 	var outb, errb bytes.Buffer
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb
@@ -118,35 +116,34 @@ func TerragruntApply(workingDirectory string) error {
 	return err
 }
 
-
 func CreateAccount(name string, environment string) error {
 	terraformLiveDir := GitClone("https://github.com/mnsanfilippo/terraform-live.git", "main")
 
-	err := CopyEnvironment(terraformLiveDir,environment)
+	err := CopyEnvironment(terraformLiveDir, environment)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
-	filename := terraformLiveDir +  "/master/us-east-1/" + environment + "/accounts/terragrunt.hcl"
+	filename := terraformLiveDir + "/master/us-east-1/" + environment + "/accounts/terragrunt.hcl"
 	replaceInput := []ReplaceInput{
 		{
 			old: "account_name",
-			new: "  account_name = " + "\"" +  name + "-" + environment + "\"",
+			new: "  account_name = " + "\"" + name + "-" + environment + "\"",
 		},
 		{
 			old: "account_email",
-			new: "  account_email = " + "\"mnsanfilippo+" +  name + "+" +  environment + "@gmail.com\"",
+			new: "  account_email = " + "\"mnsanfilippo+" + name + "+" + environment + "@gmail.com\"",
 		},
 	}
 
-	err = ReplaceInputs(filename,replaceInput)
+	err = ReplaceInputs(filename, replaceInput)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
-	workingDirectory := terraformLiveDir +  "/master/us-east-1/" + environment + "/accounts/"
+	workingDirectory := terraformLiveDir + "/master/us-east-1/" + environment + "/accounts/"
 	err = TerragruntPlan(workingDirectory)
 	if err != nil {
 		log.Fatal(err)

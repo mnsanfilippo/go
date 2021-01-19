@@ -1,4 +1,4 @@
-module account
+module github.com/mnsanfilippo/go/aws/account
 
 go 1.15
 
