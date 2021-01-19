@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 	"testing"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -44,7 +45,7 @@ func gitClone(url string, branch string) string {
 }
 
 func init(){
-	terraformLiveDir = gitClone("git@github.com:mnsanfilippo/terraform-live.git", "main")
+	terraformLiveDir = gitClone("https://github.com/mnsanfilippo/terraform-live.git", "main")
 }
 
 func TestCopyEnvironment(t *testing.T){
@@ -52,5 +53,29 @@ func TestCopyEnvironment(t *testing.T){
 	if err != nil {
 		log.Error(err)
 		t.Fail()
+	}
+}
+
+func TestReplaceInputs(t *testing.T){
+	filename := terraformLiveDir +  "/master/us-east-1/" + environment + "/accounts/terragrunt.hcl"
+	input, err := ioutil.ReadFile( filename)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	lines := strings.Split(string(input), "\n")
+
+	for i, line := range lines {
+		if strings.Contains(line, "account_name") {
+			lines[i] = "  account_name = " + "\"" + environment + "\""
+		}
+		if strings.Contains(line, "account_email") {
+			lines[i] = "  account_email = " + "\"mnsanfilippo+" + environment + "@gmail.com\""
+		}
+	}
+	output := strings.Join(lines, "\n")
+	err = ioutil.WriteFile(filename, []byte(output), 0644)
+	if err != nil {
+		log.Fatalln(err)
 	}
 }
